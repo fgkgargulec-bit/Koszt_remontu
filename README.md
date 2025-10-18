@@ -40,12 +40,13 @@
    streamlit run app.py --server.address 0.0.0.0 --server.port 8501
    ```
    *Nie trzeba tworzyć plików konfiguracyjnych ani wpisywać portu w oknie „Run and Debug”. Wystarczy terminal.*
-5. Po chwili w prawym dolnym rogu pojawi się powiadomienie o wykrytym porcie 8501. Kliknij „Open in Browser” (lub wybierz port w panelu Ports i ustaw „Open in Browser”).
+5. Po chwili w prawym dolnym rogu pojawi się powiadomienie o wykrytym porcie 8501. Kliknij „Open in Browser” **lub** otwórz zakładkę *Ports*, znajdź pozycję `8501` i wybierz akcję *Open in Browser*. Upewnij się, że numer portu to dokładnie **8501** (nie `508501` ani inna wartość).
 6. Interfejs Streamlit otworzy się w nowej karcie przeglądarki. Jeśli pojawi się monit o zaufanie dla połączenia, zaakceptuj go.
 7. Aby zakończyć działanie aplikacji, w terminalu naciśnij `Ctrl+C`.
 
 ### Rozwiązywanie problemów w Codespaces
 - **Błąd 404 po kliknięciu ikony globusa** – oznacza, że port 8501 nie jest aktualnie obsługiwany. Sprawdź, czy w terminalu nadal działa polecenie `streamlit run …` i nie zakończyło się błędem. Jeśli proces został przerwany, uruchom go ponownie tym samym poleceniem.
+- **Komunikat „Strona nie działa” (502/504)** – upewnij się, że otwierasz właściwy port `8501`. Najbezpieczniej skopiować adres *External URL* z terminala (np. `https://<identyfikator>-8501.app.github.dev`) lub kliknąć akcję *Open in Browser* w zakładce *Ports*. Jeśli port był ustawiony jako prywatny, zmień jego widoczność na *Public*.
 - **Brak portu 8501 w zakładce Ports** – otwórz zakładkę *Ports* (dolny panel), znajdź wpis `8501` i ustaw akcję *Open in Browser*. Jeżeli port nie pojawia się na liście, upewnij się, że Streamlit wystartował poprawnie – w terminalu powinny pojawić się adresy URL, np. `External URL: https://...githubpreview.dev`.
 - **Komunikat o brakującym pakiecie `streamlit`** – oznacza, że instalacja zależności się nie powiodła. Wykonaj ponownie `pip install streamlit` (w aktywowanym środowisku wirtualnym). Jeśli środowisko nie ma dostępu do internetu, skorzystaj z obrazu Codespaces, który ma Streamlit wbudowany, albo poproś administratora o włączenie dostępu.
 
