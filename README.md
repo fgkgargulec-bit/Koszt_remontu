@@ -66,6 +66,7 @@ python -m koszt_remontu.cli settings set-base "Adres bazy"
 python -m koszt_remontu.cli settings set-travel-rate 2.5
 python -m koszt_remontu.cli service add "Nazwa usługi" --unit sqm --rate 100
 python -m koszt_remontu.cli quote --service "Nazwa usługi" --quantity 3 --client-address "Adres klienta"
+# alias: python -m koszt_remontu.cli price --service "Nazwa usługi" --quantity 3 --client-address "Adres klienta"
 ```
 
 Konfiguracja (baza, stawka, lista usług) zapisywana jest w pliku `.koszt_remontu_settings.json` w katalogu domowym użytkownika.

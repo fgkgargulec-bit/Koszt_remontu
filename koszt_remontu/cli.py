@@ -135,7 +135,11 @@ def build_parser() -> argparse.ArgumentParser:
     set_rate.add_argument("travel_rate", help="Kwota w PLN")
     set_rate.set_defaults(func=_cmd_set_travel_rate)
 
-    quote = subparsers.add_parser("quote", help="Wycena usługi")
+    quote = subparsers.add_parser(
+        "quote",
+        help="Wycena usługi",
+        aliases=["price"],
+    )
     quote.add_argument("--service", required=True, help="Nazwa usługi")
     quote.add_argument("--quantity", required=True, type=int, help="Ilość")
     quote.add_argument(
