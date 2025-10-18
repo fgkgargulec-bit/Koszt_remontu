@@ -51,6 +51,18 @@ def _run_cli(cmd: list[str], payload: Optional[str] = None) -> CommandResult:
 state = load_config()
 st.set_page_config(page_title="Koszt remontu")
 st.title("Koszt remontu")
+st.markdown(
+    """
+    1. Skonfiguruj adres bazy i stawkę za kilometr w sekcji **Konfiguracja ustawień**.
+    2. Dodaj usługi w panelu **Usługi** – aplikacja sama dopasuje lokalne nazwy
+       jednostek do wymaganych przez CLI skrótów.
+    3. Użyj formularza **Wyceń usługę**, aby podać ilość, adres klienta oraz
+       (opcjonalnie) dodatkowe dane w formacie JSON.
+
+    Po każdej akcji interfejs pokaże wynik komendy CLI oraz informację, czy
+    zakończyła się ona powodzeniem.
+    """
+)
 
 with st.expander("Konfiguracja ustawień", expanded=False):
     with st.form("settings_form"):

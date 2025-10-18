@@ -23,6 +23,15 @@
    ```
 5. Przeglądarka otworzy (lub zaproponuje otwarcie) adres `http://localhost:8501`, gdzie dostępny jest interfejs.
 
+### Pierwsze kroki w aplikacji
+Po otwarciu interfejsu wykonaj kolejno:
+
+1. W sekcji **Konfiguracja ustawień** wpisz adres bazy firmy oraz stawkę za kilometr i kliknij "Zapisz ustawienia".
+2. W panelu **Usługi** dodaj oferowane pozycje. Z listy wybierz jednostkę (nazwy w języku polskim są mapowane na wymagane przez CLI skróty).
+3. W formularzu **Wyceń usługę** uzupełnij nazwę usługi, ilość, adres klienta oraz – jeśli to potrzebne – dodatkowe dane w formacie JSON.
+
+Po wysłaniu formularzy aplikacja pokazuje wynik działania CLI (treść odpowiedzi oraz kod powrotu), dzięki czemu łatwo sprawdzić, czy operacja zakończyła się sukcesem.
+
 ## Uruchomienie w GitHub Codespaces
 1. W Codespaces otwórz nowy terminal (View → Terminal lub skrót ``Ctrl+` ``).
 2. Sprawdź wersję Pythona (`python --version`). Jeśli środowisko jest świeże, utwórz i aktywuj wirtualne środowisko:
