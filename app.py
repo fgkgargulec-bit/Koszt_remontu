@@ -4,14 +4,11 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
 
 import streamlit as st
 
-# Paths used for persisting app state. This keeps the interface functional even
-# when the CLI is executed multiple times within the same Streamlit session.
-STATE_PATH = Path(".koszt_remontu_state.json")
+from koszt_remontu.config import CONFIG_PATH, load_config
 
 
 @dataclass
@@ -44,17 +41,7 @@ def _run_cli(cmd: list[str], payload: Optional[str] = None) -> CommandResult:
     )
 
 
-def _load_state() -> dict:
-    if STATE_PATH.exists():
-        return json.loads(STATE_PATH.read_text("utf-8"))
-    return {"base": "", "travel_rate": ""}
-
-
-def _save_state(base: str, travel_rate: str) -> None:
-    STATE_PATH.write_text(json.dumps({"base": base, "travel_rate": travel_rate}))
-
-
-state = _load_state()
+state = load_config()
 st.set_page_config(page_title="Koszt remontu")
 st.title("Koszt remontu")
 
@@ -62,7 +49,8 @@ with st.expander("Konfiguracja ustawień", expanded=False):
     with st.form("settings_form"):
         base_value = st.text_input("Baza", value=state.get("base", ""))
         travel_rate_value = st.text_input(
-            "Stawka za dojazd (PLN/km)", value=state.get("travel_rate", "")
+            "Stawka za dojazd (PLN/km)",
+            value=str(state.get("travel_rate", "")) or "",
         )
         submitted_settings = st.form_submit_button("Zapisz ustawienia")
 
@@ -97,7 +85,8 @@ with st.expander("Konfiguracja ustawień", expanded=False):
                 st.error(
                     travel_result.stderr or "Nie udało się ustawić stawki dojazdu"
                 )
-        _save_state(base_value, travel_rate_value)
+        st.caption(f"Konfiguracja zapisywana jest w pliku {CONFIG_PATH}")
+        state.update(load_config())
 
 
 st.header("Wyceń usługę")
