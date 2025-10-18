@@ -44,6 +44,11 @@
 6. Interfejs Streamlit otworzy się w nowej karcie przeglądarki. Jeśli pojawi się monit o zaufanie dla połączenia, zaakceptuj go.
 7. Aby zakończyć działanie aplikacji, w terminalu naciśnij `Ctrl+C`.
 
+### Rozwiązywanie problemów w Codespaces
+- **Błąd 404 po kliknięciu ikony globusa** – oznacza, że port 8501 nie jest aktualnie obsługiwany. Sprawdź, czy w terminalu nadal działa polecenie `streamlit run …` i nie zakończyło się błędem. Jeśli proces został przerwany, uruchom go ponownie tym samym poleceniem.
+- **Brak portu 8501 w zakładce Ports** – otwórz zakładkę *Ports* (dolny panel), znajdź wpis `8501` i ustaw akcję *Open in Browser*. Jeżeli port nie pojawia się na liście, upewnij się, że Streamlit wystartował poprawnie – w terminalu powinny pojawić się adresy URL, np. `External URL: https://...githubpreview.dev`.
+- **Komunikat o brakującym pakiecie `streamlit`** – oznacza, że instalacja zależności się nie powiodła. Wykonaj ponownie `pip install streamlit` (w aktywowanym środowisku wirtualnym). Jeśli środowisko nie ma dostępu do internetu, skorzystaj z obrazu Codespaces, który ma Streamlit wbudowany, albo poproś administratora o włączenie dostępu.
+
 ## Ręczne wywołania CLI
 Jeżeli chcesz przetestować backend bez interfejsu, użyj poleceń:
 ```bash
@@ -53,4 +58,4 @@ python -m koszt_remontu.cli service add "Nazwa usługi" --unit sqm --rate 100
 python -m koszt_remontu.cli quote --service "Nazwa usługi" --quantity 3 --client-address "Adres klienta"
 ```
 
-Konfiguracja (baza, stawka, lista usług) zapisywana jest w pliku `.koszt_remontu_state.json` w katalogu domowym użytkownika.
+Konfiguracja (baza, stawka, lista usług) zapisywana jest w pliku `.koszt_remontu_settings.json` w katalogu domowym użytkownika.
