@@ -6,11 +6,41 @@ import json
 import sys
 from typing import Any, Dict, Optional
 
-from .config import CONFIG_PATH, load_config, update_config
+from .config import (
+    CONFIG_PATH,
+    add_or_update_service,
+    list_services,
+    load_config,
+    update_config,
+)
 
 
 class CliError(Exception):
     """Błąd walidacji parametrów CLI."""
+
+
+_UNIT_ALIASES = {
+    "sqm": {
+        "sqm",
+        "m2",
+        "m^2",
+        "metr kwadratowy",
+        "metry kwadratowe",
+        "metry_kwadratowe",
+    },
+    "hour": {"hour", "h", "godzina", "godziny"},
+    "item": {"item", "szt", "sztuka", "sztuki"},
+}
+
+
+def _normalize_unit(unit: str) -> str:
+    normalized = unit.strip().lower()
+    for canonical, aliases in _UNIT_ALIASES.items():
+        if normalized in aliases:
+            return canonical
+    raise CliError(
+        "Nieobsługiwana jednostka. Wybierz spośród: metry kwadratowe, godziny, sztuki"
+    )
 
 
 def _cmd_set_base(args: argparse.Namespace) -> Dict[str, Any]:
@@ -69,6 +99,25 @@ def _cmd_quote(args: argparse.Namespace) -> Dict[str, Any]:
     return response
 
 
+def _cmd_service_add(args: argparse.Namespace) -> Dict[str, Any]:
+    name = args.name.strip()
+    if not name:
+        raise CliError("Nazwa usługi jest wymagana")
+    try:
+        rate = float(args.rate)
+    except ValueError as exc:
+        raise CliError("Stawka za usługę musi być liczbą") from exc
+    if rate < 0:
+        raise CliError("Stawka za usługę nie może być ujemna")
+    unit = _normalize_unit(args.unit)
+    config = add_or_update_service(name=name, unit=unit, rate=rate)
+    return {"services": config.get("services", [])}
+
+
+def _cmd_service_list(args: argparse.Namespace) -> Dict[str, Any]:
+    return {"services": list_services()}
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -93,6 +142,24 @@ def build_parser() -> argparse.ArgumentParser:
         "--client-address", required=True, help="Adres realizacji usługi"
     )
     quote.set_defaults(func=_cmd_quote)
+
+    service = subparsers.add_parser("service", help="Zarządzanie usługami")
+    service_sub = service.add_subparsers(dest="service_cmd", required=True)
+
+    service_add = service_sub.add_parser(
+        "add", help="Dodaj lub zaktualizuj usługę w konfiguracji"
+    )
+    service_add.add_argument("name", help="Nazwa usługi")
+    service_add.add_argument(
+        "--unit",
+        required=True,
+        help="Jednostka rozliczeniowa (np. metry kwadratowe, godziny, sztuki)",
+    )
+    service_add.add_argument("--rate", required=True, help="Stawka za jednostkę w PLN")
+    service_add.set_defaults(func=_cmd_service_add)
+
+    service_list = service_sub.add_parser("list", help="Wyświetl zapisane usługi")
+    service_list.set_defaults(func=_cmd_service_list)
 
     return parser
 

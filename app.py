@@ -11,6 +11,13 @@ import streamlit as st
 from koszt_remontu.config import CONFIG_PATH, load_config
 
 
+SERVICE_UNITS = {
+    "sqm": "metry kwadratowe",
+    "hour": "godziny",
+    "item": "sztuki",
+}
+
+
 @dataclass
 class CommandResult:
     """Container for subprocess execution results."""
@@ -87,6 +94,61 @@ with st.expander("Konfiguracja ustawień", expanded=False):
                 )
         st.caption(f"Konfiguracja zapisywana jest w pliku {CONFIG_PATH}")
         state.update(load_config())
+
+
+with st.expander("Usługi", expanded=False):
+    with st.form("service_form"):
+        service_name = st.text_input("Nazwa usługi")
+        service_rate = st.number_input(
+            "Stawka za jednostkę (PLN)",
+            min_value=0.0,
+            step=1.0,
+            format="%.2f",
+        )
+        unit_key = st.selectbox(
+            "Jednostka rozliczeniowa",
+            options=list(SERVICE_UNITS.keys()),
+            format_func=lambda key: SERVICE_UNITS[key],
+        )
+        submitted_service = st.form_submit_button("Zapisz usługę")
+
+    if submitted_service:
+        if not service_name.strip():
+            st.error("Nazwa usługi nie może być pusta")
+        else:
+            service_cmd = [
+                "python",
+                "-m",
+                "koszt_remontu.cli",
+                "service",
+                "add",
+                service_name,
+                "--unit",
+                unit_key,
+                "--rate",
+                f"{service_rate}",
+            ]
+            service_result = _run_cli(service_cmd)
+            if service_result.ok:
+                st.success("Usługa została zapisana")
+                state.update(load_config())
+            else:
+                st.error(service_result.stderr or "Nie udało się zapisać usługi")
+
+    services = state.get("services") or []
+    if services:
+        st.table(
+            {
+                "Nazwa": [service.get("name") for service in services],
+                "Jednostka": [
+                    SERVICE_UNITS.get(service.get("unit"), service.get("unit"))
+                    for service in services
+                ],
+                "Stawka (PLN)": [service.get("rate") for service in services],
+            }
+        )
+    else:
+        st.info("Brak zapisanych usług")
 
 
 st.header("Wyceń usługę")
