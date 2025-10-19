@@ -100,7 +100,8 @@ def _cmd_quote(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 def _cmd_service_add(args: argparse.Namespace) -> Dict[str, Any]:
-    name = args.name.strip()
+    name_candidate = args.name or getattr(args, "name_option", None)
+    name = (name_candidate or "").strip()
     if not name:
         raise CliError("Nazwa usługi jest wymagana")
     try:
@@ -162,7 +163,12 @@ def build_parser() -> argparse.ArgumentParser:
     service_add = service_sub.add_parser(
         "add", help="Dodaj lub zaktualizuj usługę w konfiguracji"
     )
-    service_add.add_argument("name", help="Nazwa usługi")
+    service_add.add_argument("name", nargs="?", help="Nazwa usługi")
+    service_add.add_argument(
+        "--name",
+        dest="name_option",
+        help="Nazwa usługi (alias dla argumentu pozycyjnego)",
+    )
     service_add.add_argument(
         "--unit",
         required=True,
