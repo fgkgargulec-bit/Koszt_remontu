@@ -1,0 +1,209 @@
+"""Simple interface for the Koszt Remontu CLI."""
+from __future__ import annotations
+
+import json
+import subprocess
+from dataclasses import dataclass
+from typing import Optional
+
+import streamlit as st
+
+from koszt_remontu.config import CONFIG_PATH, load_config
+
+
+SERVICE_UNITS = {
+    "sqm": "metry kwadratowe",
+    "hour": "godziny",
+    "item": "sztuki",
+}
+
+
+@dataclass
+class CommandResult:
+    """Container for subprocess execution results."""
+
+    stdout: str
+    stderr: str
+    returncode: int
+
+    @property
+    def ok(self) -> bool:
+        return self.returncode == 0
+
+
+def _run_cli(cmd: list[str], payload: Optional[str] = None) -> CommandResult:
+    """Execute the Koszt Remontu CLI and capture its output."""
+
+    completed = subprocess.run(
+        cmd,
+        input=payload,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    return CommandResult(
+        stdout=completed.stdout,
+        stderr=completed.stderr,
+        returncode=completed.returncode,
+    )
+
+
+state = load_config()
+st.set_page_config(page_title="Koszt remontu")
+st.title("Koszt remontu")
+st.markdown(
+    """
+    1. Skonfiguruj adres bazy i stawkę za kilometr w sekcji **Konfiguracja ustawień**.
+    2. Dodaj usługi w panelu **Usługi** – aplikacja sama dopasuje lokalne nazwy
+       jednostek do wymaganych przez CLI skrótów.
+    3. Użyj formularza **Wyceń usługę**, aby podać ilość, adres klienta oraz
+       (opcjonalnie) dodatkowe dane w formacie JSON.
+
+    Po każdej akcji interfejs pokaże wynik komendy CLI oraz informację, czy
+    zakończyła się ona powodzeniem.
+    """
+)
+
+with st.expander("Konfiguracja ustawień", expanded=False):
+    with st.form("settings_form"):
+        base_value = st.text_input("Baza", value=state.get("base", ""))
+        travel_rate_value = st.text_input(
+            "Stawka za dojazd (PLN/km)",
+            value=str(state.get("travel_rate", "")) or "",
+        )
+        submitted_settings = st.form_submit_button("Zapisz ustawienia")
+
+    if submitted_settings:
+        if base_value:
+            base_cmd = [
+                "python",
+                "-m",
+                "koszt_remontu.cli",
+                "settings",
+                "set-base",
+                base_value,
+            ]
+            base_result = _run_cli(base_cmd)
+            if base_result.ok:
+                st.success("Ustawiono bazę")
+            else:
+                st.error(base_result.stderr or "Nie udało się ustawić bazy")
+        if travel_rate_value:
+            travel_cmd = [
+                "python",
+                "-m",
+                "koszt_remontu.cli",
+                "settings",
+                "set-travel-rate",
+                travel_rate_value,
+            ]
+            travel_result = _run_cli(travel_cmd)
+            if travel_result.ok:
+                st.success("Ustawiono stawkę dojazdu")
+            else:
+                st.error(
+                    travel_result.stderr or "Nie udało się ustawić stawki dojazdu"
+                )
+        st.caption(f"Konfiguracja zapisywana jest w pliku {CONFIG_PATH}")
+        state.update(load_config())
+
+
+with st.expander("Usługi", expanded=False):
+    with st.form("service_form"):
+        service_name = st.text_input("Nazwa usługi")
+        service_rate = st.number_input(
+            "Stawka za jednostkę (PLN)",
+            min_value=0.0,
+            step=1.0,
+            format="%.2f",
+        )
+        unit_key = st.selectbox(
+            "Jednostka rozliczeniowa",
+            options=list(SERVICE_UNITS.keys()),
+            format_func=lambda key: SERVICE_UNITS[key],
+        )
+        submitted_service = st.form_submit_button("Zapisz usługę")
+
+    if submitted_service:
+        if not service_name.strip():
+            st.error("Nazwa usługi nie może być pusta")
+        else:
+            service_cmd = [
+                "python",
+                "-m",
+                "koszt_remontu.cli",
+                "service",
+                "add",
+                service_name,
+                "--unit",
+                unit_key,
+                "--rate",
+                f"{service_rate}",
+            ]
+            service_result = _run_cli(service_cmd)
+            if service_result.ok:
+                st.success("Usługa została zapisana")
+                state.update(load_config())
+            else:
+                st.error(service_result.stderr or "Nie udało się zapisać usługi")
+
+    services = state.get("services") or []
+    if services:
+        st.table(
+            {
+                "Nazwa": [service.get("name") for service in services],
+                "Jednostka": [
+                    SERVICE_UNITS.get(service.get("unit"), service.get("unit"))
+                    for service in services
+                ],
+                "Stawka (PLN)": [service.get("rate") for service in services],
+            }
+        )
+    else:
+        st.info("Brak zapisanych usług")
+
+
+st.header("Wyceń usługę")
+with st.form("quote_form"):
+    q_name = st.text_input("Usługa")
+    qty = st.number_input("Ilość", min_value=1, step=1)
+    client_address = st.text_input("Adres klienta")
+    json_payload = st.text_area(
+        "Dodatkowe dane w formacie JSON (opcjonalnie)",
+        value="",
+        placeholder="{}",
+    )
+    submit_quote = st.form_submit_button("Wyceń")
+
+if submit_quote:
+    cmd = [
+        "python",
+        "-m",
+        "koszt_remontu.cli",
+        "quote",
+        "--service",
+        q_name,
+        "--quantity",
+        str(qty),
+        "--client-address",
+        client_address,
+    ]
+
+    payload: Optional[str] = json_payload.strip() or None
+    if payload:
+        try:
+            json.loads(payload)
+        except json.JSONDecodeError:
+            st.error("Niepoprawny JSON w dodatkowych danych")
+        else:
+            result = _run_cli(cmd, payload=payload)
+    else:
+        result = _run_cli(cmd)
+
+    if result.ok:
+        st.code(result.stdout or "", language="json")
+        st.success("Polecenie zakończyło się powodzeniem")
+    else:
+        if result.stderr:
+            st.error(result.stderr)
+        st.warning(f"Polecenie zwróciło kod {result.returncode}")
